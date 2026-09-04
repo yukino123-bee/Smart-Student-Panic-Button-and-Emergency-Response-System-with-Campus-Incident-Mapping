@@ -11,8 +11,11 @@
 <script>setTimeout(() => document.getElementById('flash-msg')?.remove(), 4000)</script>
 @endif
 
-<form id="bulk-form" method="POST" action="{{ route('clinic.alerts.bulk-delete') }}" onsubmit="return confirm('Are you sure you want to delete the selected alert(s)?')">
-@csrf
+{{-- Bulk Delete Form --}}
+<form id="bulk-form" method="POST" action="{{ route('clinic.alerts.bulk-delete') }}" class="hidden">
+    @csrf
+    <div id="bulk-inputs"></div>
+</form>
 
 {{-- Header Row --}}
 <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -47,7 +50,7 @@
         </label>
 
         {{-- Delete Selected Button --}}
-        <button type="submit" id="header-delete-btn"
+        <button type="button" id="header-delete-btn"
                 class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
                 disabled>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +128,10 @@
             <div class="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 items-center">
                 {{-- Action Buttons --}}
                 <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-                    @if($alert->status === 'Pending')
+                    @php
+                        $clinicAck = $alert->notifications->where('recipient', 'Clinic')->where('status', 'Acknowledged')->count();
+                    @endphp
+                    @if(!$clinicAck)
                         <form id="ack-form-{{ $alert->id }}" method="POST" action="{{ route('clinic.incidents.acknowledge', $alert->id) }}" class="flex-1" onsubmit="return confirmAction(event, 'Are you sure you want to acknowledge this alert?', 'Acknowledge Alert', 'Acknowledge', 'warning')">
                             @csrf
                             <button type="submit" class="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
@@ -156,7 +162,6 @@
     @endforeach
 </div>
 @endif
-</form>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -166,11 +171,32 @@
         const countSpan = document.getElementById('header-selected-count');
         const bulkForm = document.getElementById('bulk-form');
 
-        if (bulkForm) {
-            bulkForm.addEventListener('submit', function(e) {
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function(e) {
                 const checked = document.querySelectorAll('.alert-checkbox:checked');
-                if (checked.length === 0) { e.preventDefault(); return; }
-                confirmAction(e, `Are you sure you want to delete ${checked.length} selected alert(s)? This action cannot be undone.`, 'Delete Selected Alerts', 'Delete All', 'danger');
+                if (checked.length === 0) return;
+                
+                window.showConfirmDialog({
+                    title: 'Delete Selected Alerts',
+                    message: `Are you sure you want to delete ${checked.length} selected alert(s)? This action cannot be undone.`,
+                    confirmText: 'Delete All',
+                    type: 'danger'
+                }).then(confirmed => {
+                    if (confirmed) {
+                        const bulkInputs = document.getElementById('bulk-inputs');
+                        if (bulkInputs) {
+                            bulkInputs.innerHTML = '';
+                            checked.forEach(cb => {
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'ids[]';
+                                input.value = cb.value;
+                                bulkInputs.appendChild(input);
+                            });
+                            document.getElementById('bulk-form').submit();
+                        }
+                    }
+                });
             });
         }
 

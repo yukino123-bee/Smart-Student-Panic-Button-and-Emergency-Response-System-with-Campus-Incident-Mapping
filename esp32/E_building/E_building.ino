@@ -3,17 +3,18 @@
 #include <WiFi.h>
 
 // --- Configuration ---
-const char *ssid = "missA";
+const char *ssid = "JOHN";
 const char *password = "12345678";
 
 // Endpoints
-const char *api_url = "http://192.168.137.9:8000/api/emergency";
-const char *status_url = "http://192.168.137.9:8000/api/device/status?device_id=ENG-001";
+const char *api_url = "http://192.168.137.61:8000/api/emergency";
+const char *status_url = "http://192.168.137.61:8000/api/device/status?device_id=ENG-001";
 
 // The unique device code for this specific ESP32
 const char *DEVICE_CODE = "ENG-001"; // E-Building
 
 // Emergency Contact Phone Number for SMS Alerts (Supports local 09... or international +63...)
+
 const char *EMERGENCY_PHONE_NUMBER = "+639187439096";
 
 // --- Hardware Pins ---
@@ -144,6 +145,12 @@ void loop() {
 
     // Check server status to see if admin acknowledged the alert
     if (now - lastStatusCheckTime >= STATUS_CHECK_INTERVAL) {
+      lastStatusCheckTime = now;
+      checkAcknowledgeStatus();
+    }
+  } else {
+    // Idle Heartbeat (send every 60 seconds to stay online on dashboard)
+    if (now - lastStatusCheckTime >= 60000) {
       lastStatusCheckTime = now;
       checkAcknowledgeStatus();
     }
@@ -428,12 +435,14 @@ void checkAcknowledgeStatus() {
     String payload = http.getString();
     // If pending is false, admin acknowledged the alert on dashboard!
     if (payload.indexOf("\"has_pending\":false") >= 0 || payload.indexOf("\"has_pending\": false") >= 0) {
-      Serial.println("\n[ACKNOWLEDGED] Alert acknowledged on dashboard! Stopping device SOS alarm.");
-      isDeviceAlarming = false;
+      if (isDeviceAlarming) {
+        Serial.println("\n[ACKNOWLEDGED] Alert acknowledged on dashboard! Stopping device SOS alarm.");
+        isDeviceAlarming = false;
 
-      digitalWrite(LED_RED, LOW);
-      digitalWrite(LED_GREEN, HIGH);
-      beepBuzzer(2, 200); // 2 confirmation beeps
+        digitalWrite(LED_RED, LOW);
+        digitalWrite(LED_GREEN, HIGH);
+        beepBuzzer(2, 200); // 2 confirmation beeps
+      }
     }
   }
   http.end();

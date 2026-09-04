@@ -55,6 +55,57 @@ test('clinic staff can acknowledge and resolve incidents', function () {
     expect($incident->fresh()->resolved_at)->not->toBeNull();
 });
 
+test('resolving an already resolved incident is idempotent', function () {
+    $user = User::factory()->create(['role' => 'Clinic']);
+    $device = Device::create([
+        'device_code' => 'CLN-002',
+        'building' => 'Health Center',
+        'floor' => '1st Floor',
+        'room' => 'Triage',
+        'status' => 'active',
+    ]);
+    $resolvedAt = now()->subMinute();
+    $incident = Incident::create([
+        'device_id' => $device->id,
+        'emergency_type' => Incident::TYPE_MEDICAL,
+        'status' => 'Resolved',
+        'resolved_at' => $resolvedAt,
+    ]);
+    $persistedResolvedAt = $incident->fresh()->resolved_at;
+
+    $this->actingAs($user)
+        ->from('/clinic/logs')
+        ->post("/clinic/incidents/{$incident->id}/resolve")
+        ->assertRedirect('/clinic/logs')
+        ->assertSessionHas('info', 'Incident is already resolved.');
+
+    expect($incident->fresh()->resolved_at->equalTo($persistedResolvedAt))->toBeTrue();
+});
+
+test('clinic logs do not offer the resolve action for resolved incidents', function () {
+    $user = User::factory()->create(['role' => 'Clinic']);
+    $device = Device::create([
+        'device_code' => 'CLN-003',
+        'building' => 'Health Center',
+        'floor' => '1st Floor',
+        'room' => 'Triage',
+        'status' => 'active',
+    ]);
+    $incident = Incident::create([
+        'device_id' => $device->id,
+        'emergency_type' => Incident::TYPE_MEDICAL,
+        'status' => 'Resolved',
+        'resolved_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get('/clinic/logs')
+        ->assertSuccessful()
+        ->assertSee('Resolved / Treated')
+        ->assertSee('Closed')
+        ->assertDontSee(route('clinic.incidents.resolve', $incident), false);
+});
+
 test('clinic user can export excel report', function () {
     $user = User::factory()->create(['role' => 'Clinic']);
 

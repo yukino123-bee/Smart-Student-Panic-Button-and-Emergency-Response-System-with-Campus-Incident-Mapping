@@ -147,6 +147,12 @@ void loop() {
       lastStatusCheckTime = now;
       checkAcknowledgeStatus();
     }
+  } else {
+    // Idle Heartbeat (send every 60 seconds to stay online on dashboard)
+    if (now - lastStatusCheckTime >= 60000) {
+      lastStatusCheckTime = now;
+      checkAcknowledgeStatus();
+    }
   }
 
   // Read physical panic buttons
@@ -428,12 +434,14 @@ void checkAcknowledgeStatus() {
     String payload = http.getString();
     // If pending is false, admin acknowledged the alert on dashboard!
     if (payload.indexOf("\"has_pending\":false") >= 0 || payload.indexOf("\"has_pending\": false") >= 0) {
-      Serial.println("\n[ACKNOWLEDGED] Alert acknowledged on dashboard! Stopping device SOS alarm.");
-      isDeviceAlarming = false;
+      if (isDeviceAlarming) {
+        Serial.println("\n[ACKNOWLEDGED] Alert acknowledged on dashboard! Stopping device SOS alarm.");
+        isDeviceAlarming = false;
 
-      digitalWrite(LED_RED, LOW);
-      digitalWrite(LED_GREEN, HIGH);
-      beepBuzzer(2, 200); // 2 confirmation beeps
+        digitalWrite(LED_RED, LOW);
+        digitalWrite(LED_GREEN, HIGH);
+        beepBuzzer(2, 200); // 2 confirmation beeps
+      }
     }
   }
   http.end();

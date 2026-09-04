@@ -53,7 +53,7 @@ class ClinicController extends Controller
 
     public function alerts()
     {
-        $alerts = Incident::with('device')
+        $alerts = Incident::with(['device', 'notifications'])
             ->clinicRelevant()
             ->active()
             ->latest('reported_at')
@@ -144,8 +144,10 @@ class ClinicController extends Controller
     public function acknowledgeIncident(Incident $incident)
     {
         abort_unless(in_array($incident->emergency_type, [Incident::TYPE_CRITICAL, Incident::TYPE_MEDICAL], true), 404);
-        abort_unless($incident->status === 'Pending', 409, 'Only pending incidents can be acknowledged.');
-        $incident->update(['status' => 'Acknowledged']);
+        
+        if ($incident->status === 'Pending') {
+            $incident->update(['status' => 'Acknowledged']);
+        }
         $incident->load('device');
 
         Notification::create([
@@ -180,7 +182,19 @@ class ClinicController extends Controller
     public function resolveIncident(Incident $incident)
     {
         abort_unless(in_array($incident->emergency_type, [Incident::TYPE_CRITICAL, Incident::TYPE_MEDICAL], true), 404);
-        abort_if($incident->status === 'Resolved', 409, 'Incident is already resolved.');
+
+        if ($incident->status === 'Resolved') {
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Incident is already resolved.',
+                    'incident' => $incident->load('device'),
+                ]);
+            }
+
+            return redirect()->back()->with('info', 'Incident is already resolved.');
+        }
+
         $incident->update(['status' => 'Resolved', 'resolved_at' => now()]);
         $incident->load('device');
 
@@ -250,12 +264,22 @@ class ClinicController extends Controller
 
     public function statsJson()
     {
+        $latestPending = Incident::with('device')
+            ->clinicRelevant()
+            ->active()
+            ->whereDoesntHave('notifications', function ($query) {
+                $query->where('recipient', 'Clinic')
+                      ->where('status', 'Acknowledged');
+            })
+            ->latest('reported_at')
+            ->first();
+
         return response()->json([
             'active_alerts' => Incident::clinicRelevant()->active()->count(),
             'incoming' => Incident::clinicRelevant()->whereDate('reported_at', today())->active()->count(),
             'treated_today' => Incident::clinicRelevant()->whereDate('resolved_at', today())->resolved()->count(),
             'resolved_today' => Incident::clinicRelevant()->whereDate('resolved_at', today())->resolved()->count(),
-            'latest_pending' => Incident::with('device')->clinicRelevant()->where('status', 'Pending')->latest('reported_at')->first(),
+            'latest_pending' => $latestPending,
         ]);
     }
 }

@@ -35,7 +35,7 @@ class NdrrmoController extends Controller
 
     public function alerts()
     {
-        $alerts = Incident::with('device')
+        $alerts = Incident::with(['device', 'notifications'])
             ->active()
             ->latest('reported_at')
             ->get();
@@ -148,6 +148,31 @@ class NdrrmoController extends Controller
         }
 
         return redirect()->back()->with('success', 'Incident acknowledged.');
+    }
+
+    public function notifyClinic(Incident $incident)
+    {
+        abort_unless($incident->emergency_type === Incident::TYPE_MEDICAL, 404);
+
+        Notification::firstOrCreate([
+            'incident_id' => $incident->id,
+            'recipient' => 'Clinic',
+        ], [
+            'channel' => 'Dashboard',
+            'status' => 'Delivered',
+            'sent_at' => now(),
+        ]);
+
+        broadcast(new \App\Events\EmergencyReported($incident))->toOthers();
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Clinic notified successfully.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Clinic notified successfully.');
     }
 
     public function dispatchIncident(Incident $incident)

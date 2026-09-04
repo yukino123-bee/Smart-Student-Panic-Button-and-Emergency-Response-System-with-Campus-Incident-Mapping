@@ -64,7 +64,7 @@ class DeviceController extends Controller
             'sent_at' => now(),
         ]);
 
-        if (in_array($emergencyType, [Incident::TYPE_CRITICAL, Incident::TYPE_MEDICAL], true)) {
+        if ($emergencyType === Incident::TYPE_CRITICAL) {
             Notification::create([
                 'incident_id' => $incident->id,
                 'recipient' => 'Clinic',
@@ -210,7 +210,7 @@ class DeviceController extends Controller
                         'sent_at' => now(),
                     ]);
 
-                    if (in_array($emergencyType, [Incident::TYPE_CRITICAL, Incident::TYPE_MEDICAL], true)) {
+                    if ($emergencyType === Incident::TYPE_CRITICAL) {
                         Notification::create([
                             'incident_id' => $incident->id,
                             'recipient' => 'Clinic',

@@ -159,7 +159,13 @@
             </div>
 
             {{-- Dynamic Action Buttons --}}
-            <div class="p-3 bg-slate-50 border-t border-slate-200">
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-col gap-2">
+                @if($alert->emergency_type === 'Medical Emergency' && !$alert->notifications->where('recipient', 'Clinic')->count())
+                    <button type="button" onclick="notifyClinic({{ $alert->id }})" class="w-full py-2 px-3 text-xs font-bold text-orange-700 bg-orange-100 border border-orange-300 hover:bg-orange-200 rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        <span>Notify Clinic for Assistance</span>
+                    </button>
+                @endif
                 @if(in_array(strtolower($alert->status), ['pending']))
                     <button type="button" onclick="acknowledgeSingleAlert({{ $alert->id }})" class="w-full py-2 px-3 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -361,6 +367,31 @@ function resolveSingleAlert(id) {
         if (!confirmed) return;
 
         fetch(`/ndrrmo/incidents/${id}/resolve`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.location.reload();
+        })
+        .catch(err => window.location.reload());
+    });
+}
+
+function notifyClinic(id) {
+    window.showConfirmDialog({
+        title: 'Notify Clinic',
+        message: 'Are you sure you want to notify the Clinic to request medical assistance for this incident?',
+        confirmText: 'Notify Clinic',
+        type: 'warning'
+    }).then(confirmed => {
+        if (!confirmed) return;
+
+        fetch(`/ndrrmo/incidents/${id}/notify-clinic`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',

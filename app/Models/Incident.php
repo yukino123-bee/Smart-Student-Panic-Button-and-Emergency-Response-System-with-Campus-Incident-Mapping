@@ -42,10 +42,9 @@ class Incident extends Model
 
     public function scopeClinicRelevant(Builder $query): Builder
     {
-        return $query->whereIn('emergency_type', [
-            self::TYPE_CRITICAL,
-            self::TYPE_MEDICAL,
-        ]);
+        return $query->whereHas('notifications', function ($q) {
+            $q->where('recipient', 'Clinic');
+        });
     }
 
     public function device(): BelongsTo

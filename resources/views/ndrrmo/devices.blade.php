@@ -59,13 +59,22 @@
                         {{ $device->latitude ?? 'N/A' }}, <br>{{ $device->longitude ?? 'N/A' }}
                     </td>
                     <td class="p-4">
-                        @if($device->status === 'active')
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5"></span>Active</span>
-                        @elseif($device->status === 'maintenance')
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-600 mr-1.5"></span>Maintenance</span>
-                        @else
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase bg-slate-100 text-slate-600 border border-slate-200"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>Inactive</span>
-                        @endif
+                        <div class="flex flex-col gap-1.5">
+                            @if($device->is_online)
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5 animate-pulse"></span>Online</span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase bg-slate-50 text-slate-600 border border-slate-200 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>Offline</span>
+                            @endif
+                            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                @if($device->status === 'active')
+                                    <span class="text-emerald-600">Active</span>
+                                @elseif($device->status === 'maintenance')
+                                    <span class="text-amber-600">Maintenance</span>
+                                @else
+                                    <span class="text-slate-500">Inactive</span>
+                                @endif
+                            </div>
+                        </div>
                     </td>
                     <td class="p-4 text-slate-600 text-xs">
                         @if($device->last_seen)

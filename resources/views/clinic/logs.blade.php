@@ -37,7 +37,6 @@
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-600 font-black uppercase tracking-wider">
-                    <th class="px-6 py-4"># ID</th>
                     <th class="px-6 py-4">Time Reported</th>
                     <th class="px-6 py-4">Emergency Category</th>
                     <th class="px-6 py-4">Building Location</th>
@@ -49,7 +48,6 @@
             <tbody class="text-xs divide-y divide-slate-100 font-medium text-slate-800">
                 @forelse($logs as $log)
                 <tr class="hover:bg-slate-50/80 transition-colors">
-                    <td class="px-6 py-4 font-mono font-black text-slate-900">#{{ $log->id }}</td>
                     <td class="px-6 py-4 font-bold text-slate-700">
                         {{ $log->created_at ? $log->created_at->format('M d, Y · h:i A') : 'N/A' }}
                     </td>
@@ -69,12 +67,12 @@
                         @php
                             $st = strtolower($log->status);
                         @endphp
-                        @if($st === 'Resolved')
+                        @if($st === 'resolved')
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                                 Resolved / Treated
                             </span>
-                        @elseif($st === 'Pending')
+                        @elseif($st === 'pending')
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 animate-pulse">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
                                 Pending
@@ -87,7 +85,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 text-center">
-                        @if($st !== 'Resolved')
+                        @if($st !== 'resolved')
                         <form method="POST" action="{{ route('clinic.incidents.resolve', $log->id) }}">
                             @csrf
                             <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] shadow-sm transition-all cursor-pointer">
@@ -101,7 +99,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-slate-500 font-bold">
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-500 font-bold">
                         No incident log records found.
                     </td>
                 </tr>

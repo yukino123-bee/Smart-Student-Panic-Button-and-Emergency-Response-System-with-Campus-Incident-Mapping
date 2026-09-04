@@ -38,6 +38,7 @@ Route::middleware(['auth', 'role:DRRMO'])->prefix('ndrrmo')->name('ndrrmo.')->gr
     Route::get('/reports/export-excel', [NdrrmoController::class, 'exportExcel'])->name('reports.export-excel');
     Route::post('/alerts/bulk-delete', [NdrrmoController::class, 'bulkDeleteAlerts'])->name('alerts.bulk-delete');
     Route::post('/incidents/{incident}/acknowledge', [NdrrmoController::class, 'acknowledgeIncident'])->name('incidents.acknowledge');
+    Route::post('/incidents/{incident}/notify-clinic', [NdrrmoController::class, 'notifyClinic'])->name('incidents.notify-clinic');
     Route::post('/incidents/{incident}/dispatch', [NdrrmoController::class, 'dispatchIncident'])->name('incidents.dispatch');
     Route::post('/incidents/{incident}/resolve', [NdrrmoController::class, 'resolveIncident'])->name('incidents.resolve');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
